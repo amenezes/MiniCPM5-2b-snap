@@ -1,0 +1,44 @@
+#!/bin/bash -eu
+
+port="$(modelctl get http.port)"
+host="$(modelctl get http.host)"
+sleep_idle_seconds="$(modelctl get sleep-idle-seconds)"
+min_context_size="$(modelctl get min-context-size)"
+model_name=$("$SNAP_NAME" model --format=json | jq -r '.name')
+
+extra_args=()
+
+verbose="$(modelctl get verbose)"
+if [ "${verbose}" = "true" ]; then
+  extra_args+=(--verbose)
+fi
+
+# Reasoning trace: llama.cpp changed the default between builds (b10344: off,
+# b11100: on), so the flag is always passed explicitly instead of relying on the
+# runtime default. The value comes from the snap configuration
+# reasoning-preserve (default true); set it to false to save tokens.
+if [ "$(modelctl get reasoning-preserve 2>/dev/null || echo true)" = "false" ]; then
+  extra_args+=(--no-reasoning-preserve)
+else
+  extra_args+=(--reasoning-preserve)
+fi
+
+set -x
+# --jinja: documented by OpenBMB for MiniCPM5-2B (the GGUF embeds the chat
+#   template, so tool calling also works without it, but this is the supported path).
+# --min-p 0.0: the model card asks for it explicitly; the llama.cpp default (0.05)
+#   filters out low-probability tokens and leads to repetitive output.
+# No --threads on purpose: llama.cpp defaults to the number of physical cores,
+#   which measured ~18x faster than --threads $(nproc) on an SMT machine.
+exec llama-server \
+  --model "$MODEL_FILE" \
+  --alias "$model_name" \
+  --port "$port" \
+  --host "$host" \
+  --no-warmup \
+  --sleep-idle-seconds "$sleep_idle_seconds" \
+  --fit-ctx "$min_context_size" \
+  --jinja \
+  --min-p 0.0 \
+  "${extra_args[@]}" \
+  "$@"

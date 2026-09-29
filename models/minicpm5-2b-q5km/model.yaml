@@ -1,0 +1,19 @@
+name: minicpm5-2b-q5km
+description: MiniCPM5-2B, a 2.5B dense instruction-tuned model for on-device deployment, with reasoning and tool-calling (Q5_K_M quantization)
+model-card-url: https://huggingface.co/openbmb/MiniCPM5-2B-GGUF
+format: GGUF
+quantization: Q5_K_M
+
+disk-size: 1831M
+
+capabilities:
+  - text
+  - thinking
+  - tools
+
+components:
+  - model-q5-k-m-gguf
+
+environment:
+  # Single-file GGUF (no sharding), so no layout/symlinks are needed.
+  - MODEL_FILE=$SNAP_COMPONENTS/model-q5-k-m-gguf/MiniCPM5-2B-Q5_K_M.gguf

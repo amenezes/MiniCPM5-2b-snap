@@ -1,0 +1,23 @@
+name: PR Checks
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  lint:
+    name: Lint package
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Lint package manifests
+        # Builds modelctl from source and runs `modelctl debug lint-package .`
+        # over snap/snapcraft.yaml, engines/, models/ and runtimes/.
+        uses: canonical/inference-snaps-cli/.github/actions/lint-package@v2.0.0-beta.14
+        with:
+          package-dir: .
