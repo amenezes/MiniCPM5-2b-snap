@@ -157,6 +157,15 @@ empty.
   sudo snap connect minicpm5-2b:hardware-observe
   sudo minicpm5-2b use-engine --auto
   ```
+* **AMD engine needs `process-control`:** the ROCm runtime pins its worker threads with
+  `sched_setaffinity`, and snapd's default seccomp policy only allows that call for pid 0.
+  Without the plug, HSA fails to initialise, llama.cpp reports `no ROCm-capable device is
+  detected` and runs on the CPU while the engine still shows `amd-gpu`. The interface is not
+  auto-connected, so connect it once after install:
+  ```shell
+  sudo snap connect minicpm5-2b:process-control
+  sudo snap restart minicpm5-2b.server
+  ```
 * **Provider:** the snap exports an `inference-provider` content slot, so another snap can consume
   this endpoint instead of running its own model.
 * **Local API:** the endpoint has no authentication and allows cross-origin requests, which the
@@ -209,6 +218,9 @@ Two store-side requests are prerequisites, and both take time, so open them earl
   a store install cannot detect the hardware during `use-engine --auto` until the request is
   granted (see the
   [process](https://snapcraft.io/docs/reference/administration/process-for-aliases-auto-connections-and-tracks/)).
+* **Auto-connection of `process-control`** -- also not auto-connected, and the `amd-gpu` engine
+  cannot initialise ROCm without it (see the AMD note above). Request it together with
+  `hardware-observe`.
 
 The first upload also requires a registered name, and a repository that actually exists: the store
 listing links to `website`, `source-code`, `issues` and `contact` from `snap/snapcraft.yaml`.
