@@ -241,31 +241,3 @@ de publicação usam `make init-dspark`. Para usar uma cópia local, coloque-a e
 variantes, incluindo `components/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf`) e execute
 `make verify-model` (ou `make verify-extra-models`, `make verify-dspark`). Com o snap
 instalado, `make use-dspark` e `make use-default` alternam entre as variantes.
-
-## Publicação na Snap Store
-
-Dois pedidos à loja são pré-requisitos, e ambos demoram, então abra-os cedo:
-
-* **Permissão de upload de componentes** — os pesos e o runtime llama.cpp viajam como
-  [componentes](https://snapcraft.io/docs/explanation/how-snaps-work/snap-components/), e o upload
-  de componentes é restrito a contas na allow-list da loja. Peça no
-  [fórum do Snapcraft](https://forum.snapcraft.io/c/store-requests/).
-* **Auto-conexão de `hardware-observe`** — a interface não é auto-conectada por padrão, então uma
-  instalação vinda da loja não detecta o hardware no `use-engine --auto` até o pedido ser
-  aprovado (ver o
-  [processo](https://snapcraft.io/docs/reference/administration/process-for-aliases-auto-connections-and-tracks/)).
-* **Auto-conexão de `process-control`** — também não é auto-conectada, e o motor `amd-gpu` não
-  inicializa o ROCm sem ela (ver a nota sobre AMD acima). Peça junto com `hardware-observe`.
-
-O primeiro upload também exige o nome registrado e um repositório que exista de fato: a página da
-loja aponta para `website`, `source-code`, `issues` e `contact` do `snap/snapcraft.yaml`.
-
-```shell
-snapcraft login
-snapcraft register minicpm5-2b
-make build
-./dev/upload.sh latest/edge   # snapcraft upload <snap> --component ... --release=latest/edge
-```
-
-O `.github/workflows/cicd.yaml` publica em `latest/edge` a cada push na `main` quando o secret
-`SNAPCRAFT_STORE_CREDENTIALS` (saída de `snapcraft export-login`) estiver configurado.

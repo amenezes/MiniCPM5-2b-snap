@@ -221,30 +221,3 @@ snap 不会打包 DSpark 组件，因此发布构建使用 `make init-dspark`。
 `components/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf`），然后运行 `make verify-model`
 （或 `make verify-extra-models`、`make verify-dspark`）。snap 安装后，可用
 `make use-dspark` / `make use-default` 切换变体。
-
-## 发布到 Snap Store
-
-有两项商店侧申请是前置条件，且都需要时间，请尽早提交：
-
-* **组件上传权限** —— 权重与 llama.cpp 运行时以
-  [组件](https://snapcraft.io/docs/explanation/how-snaps-work/snap-components/)形式发布，而组件
-  上传仅限商店白名单内的账号。请在
-  [Snapcraft 论坛](https://forum.snapcraft.io/c/store-requests/)提交申请。
-* **`hardware-observe` 的自动连接** —— 该接口默认不会自动连接，因此在申请获批前，从商店安装的
-  snap 无法在 `use-engine --auto` 时检测硬件（参见
-  [流程](https://snapcraft.io/docs/reference/administration/process-for-aliases-auto-connections-and-tracks/)）。
-* **`process-control` 的自动连接** —— 该接口同样不会自动连接，而 `amd-gpu` 引擎缺少它便无法初始化
-  ROCm（见上文 AMD 说明）。请与 `hardware-observe` 一并申请。
-
-首次上传还需要注册名称，以及一个真实存在的仓库：商店页面会链接到 `snap/snapcraft.yaml` 中的
-`website`、`source-code`、`issues` 和 `contact`。
-
-```shell
-snapcraft login
-snapcraft register minicpm5-2b
-make build
-./dev/upload.sh latest/edge   # snapcraft upload <snap> --component ... --release=latest/edge
-```
-
-配置好 `SNAPCRAFT_STORE_CREDENTIALS` secret（`snapcraft export-login` 的输出）后，
-`.github/workflows/cicd.yaml` 会在每次推送到 `main` 时发布到 `latest/edge`。
