@@ -155,7 +155,7 @@ vazio.
 
 💻 **[Código do MiniCPM](https://github.com/OpenBMB/MiniCPM)**, repositório upstream e guias de implantação
 
-🐛 **[Issues](https://github.com/canonical/inference-snaps/issues)**, relate problemas e solicite novos recursos
+🐛 **[Issues](https://github.com/amenezes/MiniCPM5-2b-snap/issues)**, relate problemas e solicite novos recursos
 
 ## Notas sobre este snap
 
@@ -208,7 +208,7 @@ vazio.
 
 Clone o repositório:
 ```shell
-git clone <this-repo>
+git clone https://github.com/amenezes/MiniCPM5-2b-snap
 ```
 
 Inicialize o ambiente de desenvolvimento:

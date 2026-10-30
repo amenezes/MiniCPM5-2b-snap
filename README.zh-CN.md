@@ -145,7 +145,7 @@ curl -s http://127.0.0.1:8354/v1/chat/completions -H 'Content-Type: application/
 
 💻 **[MiniCPM 源码](https://github.com/OpenBMB/MiniCPM)**，上游仓库与部署指南
 
-🐛 **[Issues](https://github.com/canonical/inference-snaps/issues)**，反馈问题或提出功能需求
+🐛 **[Issues](https://github.com/amenezes/MiniCPM5-2b-snap/issues)**，反馈问题或提出功能需求
 
 ## 关于本 snap 的说明
 
@@ -189,7 +189,7 @@ curl -s http://127.0.0.1:8354/v1/chat/completions -H 'Content-Type: application/
 
 克隆仓库：
 ```shell
-git clone <this-repo>
+git clone https://github.com/amenezes/MiniCPM5-2b-snap
 ```
 
 初始化开发环境：

@@ -63,10 +63,10 @@ description: |
   `/snap/minicpm5-2b/current/usr/share/doc`.
 icon: snap/gui/icon-256.png
 license: GPL-3.0
-website: https://github.com/amenezes/miniCPM5-2b
-source-code: https://github.com/amenezes/miniCPM5-2b
-issues: https://github.com/amenezes/miniCPM5-2b/issues
-contact: https://github.com/amenezes/miniCPM5-2b/issues
+website: https://github.com/amenezes/MiniCPM5-2b-snap
+source-code: https://github.com/amenezes/MiniCPM5-2b-snap
+issues: https://github.com/amenezes/MiniCPM5-2b-snap/issues
+contact: https://github.com/amenezes/MiniCPM5-2b-snap/issues
 
 adopt-info: version
 

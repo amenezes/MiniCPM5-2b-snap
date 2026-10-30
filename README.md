@@ -159,7 +159,7 @@ empty.
 
 💻 **[MiniCPM source](https://github.com/OpenBMB/MiniCPM)**, upstream repository and deployment guides
 
-🐛 **[Issues](https://github.com/canonical/inference-snaps/issues)**, report bugs and request features
+🐛 **[Issues](https://github.com/amenezes/MiniCPM5-2b-snap/issues)**, report bugs and request features
 
 ## Notes on this snap
 
@@ -210,7 +210,7 @@ empty.
 
 Clone the repo:
 ```shell
-git clone <this-repo>
+git clone https://github.com/amenezes/MiniCPM5-2b-snap
 ```
 
 Initialize the development environment:
