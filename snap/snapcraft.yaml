@@ -24,11 +24,17 @@ description: |
 
   Three quantization variants are available (Q4_K_M by default):
 
-  * Q4_K_M (~1.5 GB): best size/quality trade-off, recommended for most users
-  * Q5_K_M (~1.8 GB): better reasoning and tool-calling quality
-  * Q6_K (~2.0 GB): near-FP16 quality for accuracy-sensitive workloads
+  * `minicpm5-2b` (Q4_K_M, ~1.5 GB): best size/quality trade-off, recommended for most users
+  * `minicpm5-2b-q5km` (Q5_K_M, ~1.8 GB): better reasoning and tool-calling quality
+  * `minicpm5-2b-q6k` (Q6_K, ~2.0 GB): near-FP16 quality for accuracy-sensitive workloads
 
   Switch variants with `sudo minicpm5-2b use-model <variant>`.
+
+  An optional `minicpm5-2b-dspark` variant adds the DSpark draft model to the
+  Q4_K_M weights, decoding with speculative verification: generated tokens are
+  unchanged, and generation is faster at the cost of ~650 MB of extra disk and
+  memory. Enable it with `sudo minicpm5-2b use-model minicpm5-2b-dspark`, and
+  switch back with `sudo minicpm5-2b use-model minicpm5-2b`.
 
   **Requirements:**
 
@@ -197,6 +203,7 @@ parts:
       "model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf": (component/model-q4-k-m-gguf)
       "model-q5-k-m-gguf/MiniCPM5-2B-Q5_K_M.gguf": (component/model-q5-k-m-gguf)
       "model-q6-k-gguf/MiniCPM5-2B-Q6_K.gguf": (component/model-q6-k-gguf)
+      "model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf": (component/model-dspark-gguf)
 
     prime:
       # Exclude everything not explicitly organized
@@ -205,6 +212,8 @@ parts:
   # Pinned deliberately: MiniCPM5 tool calling requires the llama.cpp MiniCPM5
   # chat parser, first available in build b10154. b10344 is the build also used
   # by the phi4, smollm2 and gemma4 snaps. Bump only with the tool-calling test.
+  # The DSpark variant needs a build with `--spec-type draft-dspark` as well:
+  # b10344 has it, b10154 does not.
   llamacpp:
     plugin: dump
     source:
@@ -290,6 +299,11 @@ components:
     type: standard
     summary: MiniCPM5 2B Q6_K GGUF
     description: Model weights for MiniCPM5-2B in GGUF format, quantized to Q6_K
+
+  model-dspark-gguf:
+    type: standard
+    summary: MiniCPM5 2B DSpark draft GGUF
+    description: DSpark draft model for speculative decoding with MiniCPM5-2B in GGUF format
 
   llamacpp:
     type: standard

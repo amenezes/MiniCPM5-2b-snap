@@ -39,6 +39,51 @@ minicpm5-2b
 > O motor `amd-gpu` usa o driver `amdgpu` do kernel (KFD); as bibliotecas de user
 > space do ROCm vêm embarcadas no snap, então não é preciso instalar ROCm no host.
 
+## Variantes de quantização
+
+Há três níveis de quantização disponíveis. O Q4_K_M é o padrão; troque com
+`sudo minicpm5-2b use-model <variante>` e reinicie o serviço:
+
+| Variante | Pesos do modelo | Disco (instalado) | Observações |
+| --- | --- | --- | --- |
+| `minicpm5-2b` (Q4_K_M) | 1,5 GB | ~1,7 GB | Melhor relação tamanho/qualidade, recomendado |
+| `minicpm5-2b-q5km` (Q5_K_M) | 1,8 GB | ~2,0 GB | Melhor qualidade em raciocínio e chamada de ferramentas |
+| `minicpm5-2b-q6k` (Q6_K) | 2,0 GB | ~2,2 GB | Qualidade próxima de FP16 para cargas sensíveis à precisão |
+
+```shell
+sudo minicpm5-2b use-model minicpm5-2b-q5km
+sudo snap restart minicpm5-2b
+```
+
+## Decodificação especulativa com DSpark (opcional)
+
+A variante `minicpm5-2b-dspark` combina os pesos Q4_K_M com o modelo draft
+[MiniCPM5-2B-DSpark](https://huggingface.co/openbmb/MiniCPM5-2B-DSpark), da OpenBMB. O draft
+propõe blocos de até 7 tokens e o modelo alvo os verifica, então a resposta continua sendo a do
+modelo alvo -- a especulação só muda a velocidade (um token em empate quase exato ainda pode
+diferir, porque o batching altera o arredondamento de ponto flutuante). O draft é um componente
+separado: apenas essa variante o baixa (~650 MB).
+
+```shell
+sudo minicpm5-2b use-model minicpm5-2b-dspark
+sudo minicpm5-2b use-model minicpm5-2b   # volta à variante padrão
+```
+
+Medido em um AMD Ryzen 9 3900X (motor cpu, Q4_K_M, contexto de 8K, draft BF16 do upstream):
+geração de código em modo greedy passa de ~18,9 para ~31,6-37,4 tokens/s (~1,7-2,0x); chat com
+temperatura 1.0 e raciocínio fica praticamente neutro (~17,3 para ~15,4-17,1 tokens/s). O ganho se
+concentra em geração de baixa temperatura (código, extração): com amostragem o draft aceita menos
+tokens e o custo dele consome quase toda a economia. Tool calling não muda.
+
+O custo é ~650 MB de disco e ~0,8 GB de memória (pico de ~3,7 GB em 8K, contra ~2,9 GB da
+variante padrão); abaixo de ~4 GB de RAM, use a variante padrão.
+
+> [!NOTE]
+> O `--fit` não contabiliza o draft ao dimensionar o contexto (o llama.cpp registra
+> `[spec] failed to measure draft model memory`), então a variante DSpark deixa ~0,8 GB menos de
+> folga do que o contexto dimensionado pressupõe. Em máquina com memória apertada (RAM ou VRAM),
+> reduza o `min-context-size`.
+
 ## Requisitos
 
 Medidos como o pico de RSS do processo `llama-server`, com os pesos Q4_K_M incluídos
@@ -187,9 +232,15 @@ make build
 make install
 ```
 
-O `make init` baixa o GGUF da versão fixada (~1,5 GB) e verifica o seu sha256. Para usar
-uma cópia local, coloque-a em `components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf` e
-execute `make verify-model`.
+O `make init` baixa o GGUF Q4_K_M padrão (~1,5 GB) e verifica o seu sha256. Para baixar
+todas as variantes (Q4_K_M, Q5_K_M, Q6_K e o draft do DSpark), use `make init-all`;
+`make init-dspark` baixa apenas os pesos padrão e o draft. O draft é opcional no build,
+como os pesos Q5_K_M/Q6_K: um snap sem ele não inclui o componente DSpark, então os builds
+de publicação usam `make init-dspark`. Para usar uma cópia local, coloque-a em
+`components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf` (e da mesma forma para as outras
+variantes, incluindo `components/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf`) e execute
+`make verify-model` (ou `make verify-extra-models`, `make verify-dspark`). Com o snap
+instalado, `make use-dspark` e `make use-default` alternam entre as variantes.
 
 ## Publicação na Snap Store
 

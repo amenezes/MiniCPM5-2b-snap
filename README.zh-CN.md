@@ -37,6 +37,48 @@ minicpm5-2b
 > `amd-gpu` 引擎使用内核自带的 `amdgpu` 驱动（KFD）；ROCm 用户态库已打包在本
 > snap 中，主机无需安装 ROCm。
 
+## 量化变体
+
+提供三种量化版本。默认使用 Q4_K_M；可通过
+`sudo minicpm5-2b use-model <变体>` 切换，并重启服务：
+
+| 变体 | 模型权重 | 磁盘占用（安装后） | 说明 |
+| --- | --- | --- | --- |
+| `minicpm5-2b`（Q4_K_M） | 1.5 GB | 约 1.7 GB | 体积与质量平衡最佳，推荐 |
+| `minicpm5-2b-q5km`（Q5_K_M） | 1.8 GB | 约 2.0 GB | 推理与工具调用质量更好 |
+| `minicpm5-2b-q6k`（Q6_K） | 2.0 GB | 约 2.2 GB | 接近 FP16 质量，适合对精度敏感的工作负载 |
+
+```shell
+sudo minicpm5-2b use-model minicpm5-2b-q5km
+sudo snap restart minicpm5-2b
+```
+
+## DSpark 投机解码（可选）
+
+`minicpm5-2b-dspark` 变体将 Q4_K_M 权重与 OpenBMB 的
+[MiniCPM5-2B-DSpark](https://huggingface.co/openbmb/MiniCPM5-2B-DSpark) 草稿模型配合使用。
+草稿模型每次提出最多 7 个 token，由目标模型逐一验证，因此回答仍来自目标模型——投机只影响
+生成速度（极少数几乎持平的 token 仍可能不同，因为批处理会改变浮点舍入）。草稿模型是独立组件，
+只有该变体会下载它（约 650 MB）。
+
+```shell
+sudo minicpm5-2b use-model minicpm5-2b-dspark
+sudo minicpm5-2b use-model minicpm5-2b   # 切回默认变体
+```
+
+在 AMD Ryzen 9 3900X（cpu 引擎、Q4_K_M、8K 上下文、上游 BF16 草稿模型）上实测：greedy 代码生成
+从约 18.9 提升到约 31.6–37.4 token/s（约 1.7–2.0 倍）；温度 1.0 且开启思考的对话基本持平
+（约 17.3 降至约 15.4–17.1 token/s）。收益集中在低温生成（代码、抽取）场景：采样时草稿模型
+接受的 token 更少，其自身开销抵消了大部分收益。工具调用不受影响。
+
+代价是约 650 MB 磁盘和约 0.8 GB 内存（8K 上下文峰值约 3.7 GB，默认变体约 2.9 GB）；
+内存低于约 4 GB 时请使用默认变体。
+
+> [!NOTE]
+> `--fit` 在设定上下文时不计入草稿模型（llama.cpp 会记录
+> `[spec] failed to measure draft model memory`），因此 DSpark 变体的实际余量比按上下文推算的
+> 少约 0.8 GB。内存（RAM 或显存）紧张时可降低 `min-context-size`。
+
 ## 资源需求
 
 以下数据为 `llama-server` 进程的 RSS 峰值，基于本 snap 内置的 Q4_K_M 权重（1.6 GB）
@@ -171,9 +213,14 @@ make build
 make install
 ```
 
-`make init` 会下载固定版本的 GGUF（约 1.5 GB）并校验其 sha256。如需改用本地副本，
-请将其放到 `components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf`，然后运行
-`make verify-model`。
+`make init` 会下载默认的 Q4_K_M GGUF（约 1.5 GB）并校验其 sha256。如需下载所有变体
+（Q4_K_M、Q5_K_M、Q6_K 以及 DSpark 草稿模型），请使用 `make init-all`；`make init-dspark`
+只下载默认权重与草稿模型。草稿模型在构建时是可选的，与 Q5_K_M/Q6_K 权重相同：未包含它的
+snap 不会打包 DSpark 组件，因此发布构建使用 `make init-dspark`。如需改用本地副本，请将
+其放到 `components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf`（其他变体同理，包括
+`components/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf`），然后运行 `make verify-model`
+（或 `make verify-extra-models`、`make verify-dspark`）。snap 安装后，可用
+`make use-dspark` / `make use-default` 切换变体。
 
 ## 发布到 Snap Store
 
