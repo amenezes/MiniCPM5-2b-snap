@@ -1,0 +1,25 @@
+# Q4_K_M weights plus the DSpark draft model: same model, decoded with
+# speculative verification. DRAFT_FILE gates the extra llama-server flags in
+# engines/*/server, so this variant stays opt-in: the draft is a separate
+# component and only this model installs it.
+name: minicpm5-2b-dspark
+description: MiniCPM5-2B (Q4_K_M) with DSpark speculative decoding, a 2.5B dense instruction-tuned model for on-device deployment, with reasoning and tool-calling
+model-card-url: https://huggingface.co/openbmb/MiniCPM5-2B-DSpark
+format: GGUF
+quantization: Q4_K_M
+
+disk-size: 2214M
+
+capabilities:
+  - text
+  - thinking
+  - tools
+
+components:
+  - model-q4-k-m-gguf
+  - model-dspark-gguf
+
+environment:
+  # Single-file GGUFs (no sharding), so no layout/symlinks are needed.
+  - MODEL_FILE=$SNAP_COMPONENTS/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf
+  - DRAFT_FILE=$SNAP_COMPONENTS/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf

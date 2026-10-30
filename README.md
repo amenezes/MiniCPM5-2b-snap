@@ -54,6 +54,40 @@ sudo minicpm5-2b use-model minicpm5-2b-q5km
 sudo snap restart minicpm5-2b
 ```
 
+## DSpark speculative decoding (optional)
+
+The `minicpm5-2b-dspark` variant pairs the Q4_K_M weights with OpenBMB's
+[MiniCPM5-2B-DSpark](https://huggingface.co/openbmb/MiniCPM5-2B-DSpark) draft model. The draft
+proposes blocks of up to 7 tokens and the target model verifies them, so the answer is the target
+model's own -- speculation only changes how fast it is produced (a near-tie token can still differ,
+because batching changes the floating-point rounding). The draft is a separate component: only this
+variant downloads it.
+
+```shell
+sudo minicpm5-2b use-model minicpm5-2b-dspark   # ~650 MB extra download
+sudo minicpm5-2b use-model minicpm5-2b          # back to the default variant
+```
+
+Measured on an AMD Ryzen 9 3900X (cpu engine, Q4_K_M, 8K context, upstream BF16 draft):
+
+| Workload | Generation (tokens/s) | Speed-up |
+| --- | --- | --- |
+| Code, greedy decoding | 18.9 -> 31.6-37.4 | ~1.7-2.0x |
+| Chat, temperature 1.0 with thinking | 17.3 -> 15.4-17.1 | ~neutral |
+
+The gain is concentrated in low-temperature generation (code, extraction): with sampling the draft
+accepts fewer tokens, so the draft's own cost offsets most of the saving. Tool calling is
+unaffected.
+
+The cost is ~650 MB of disk and ~0.8 GB of peak memory (~3.7 GB at 8K context, against ~2.9 GB
+for the default variant), so stay on the default variant below ~4 GB of RAM.
+
+> [!NOTE]
+> `--fit` does not account for the draft model when sizing the context (llama.cpp logs
+> `[spec] failed to measure draft model memory`), so the DSpark variant leaves ~0.8 GB less
+> headroom than the fitted context assumes. On a machine with tight memory (RAM or VRAM), lower
+> `min-context-size`.
+
 ## Requirements
 
 Measured as the peak RSS of the `llama-server` process, with the bundled Q4_K_M weights
@@ -201,10 +235,14 @@ make install
 ```
 
 `make init` downloads the default Q4_K_M GGUF (~1.5 GB) and verifies its sha256. To
-download all quantization variants (Q4_K_M, Q5_K_M, Q6_K), use `make init-all` instead.
-To use a local copy, place it at `components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf`
-(and similarly for the other variants) and run `make verify-model` (or
-`make verify-extra-models`).
+download every variant (Q4_K_M, Q5_K_M, Q6_K and the DSpark draft), use `make init-all` instead;
+`make init-dspark` fetches only the default weights plus the draft. The draft is optional at build
+time, like the Q5_K_M/Q6_K weights: a snap built without it does not ship the DSpark component, so
+publish builds use `make init-dspark`. To use a local copy, place it at
+`components/model-q4-k-m-gguf/MiniCPM5-2B-Q4_K_M.gguf` (and similarly for the other variants,
+including `components/model-dspark-gguf/MiniCPM5-2.6B-DSpark.gguf`) and run `make verify-model`
+(or `make verify-extra-models`, `make verify-dspark`). With the snap installed, `make use-dspark`
+and `make use-default` switch between the variants.
 
 ## Publishing to the Snap Store
 

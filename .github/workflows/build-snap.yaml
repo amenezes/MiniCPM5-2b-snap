@@ -41,8 +41,10 @@ jobs:
           submodules: recursive
 
       - name: Init build environment
-        # Installs pipx, fetches the pinned GGUF into components/ and verifies its sha256.
-        run: make init
+        # Installs pipx, fetches the pinned GGUFs into components/ and verifies
+        # their sha256: the default Q4_K_M weights and the DSpark draft, so both
+        # components are built and published with the snap.
+        run: make init-dspark
 
       - name: Build snap and components
         uses: canonical/action-build@v1

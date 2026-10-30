@@ -23,6 +23,14 @@ else
   extra_args+=(--reasoning-preserve)
 fi
 
+# DSpark speculative decoding: only the variant that ships the draft model
+# declares DRAFT_FILE, so the flags follow that variable instead of a snap
+# config. n-max is the block size the draft was trained with (7 tokens per
+# forward pass).
+if [ -n "${DRAFT_FILE:-}" ]; then
+  extra_args+=(--model-draft "$DRAFT_FILE" --spec-type draft-dspark --spec-draft-n-max 7)
+fi
+
 set -x
 # Identical to the cpu engine on purpose: llama.cpp defaults to --fit on and
 # --gpu-layers auto, so it decides by itself how many layers to place in VRAM.

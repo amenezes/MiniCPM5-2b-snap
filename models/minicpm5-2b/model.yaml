@@ -1,6 +1,6 @@
 # Default variant (Q4_K_M). The name carries no quantization suffix: it is what
 # the OpenAI API serves as the model id (see engines/*/server, --alias).
-# Additional variants: minicpm5-2b-q5km, minicpm5-2b-q6k.
+# Additional variants: minicpm5-2b-q5km, minicpm5-2b-q6k, minicpm5-2b-dspark.
 name: minicpm5-2b
 description: MiniCPM5-2B, a 2.5B dense instruction-tuned model for on-device deployment, with reasoning and tool-calling
 model-card-url: https://huggingface.co/openbmb/MiniCPM5-2B-GGUF

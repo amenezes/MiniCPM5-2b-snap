@@ -21,7 +21,14 @@ Q6K_FILE ?= MiniCPM5-2B-Q6_K.gguf
 Q6K_SHA256 ?= c9f424852aa737b3f5f2f83096a6214d86a8ea2516f3a0fbaa04a3b4feba477d
 Q6K_DIR := components/model-q6-k-gguf
 
-.PHONY: all help init build install upload smoke-test install-deps init-submodules download-models download-extra-models verify-model verify-extra-models
+# DSpark draft model (optional `minicpm5-2b-dspark` variant). Not a standalone
+# model: it is loaded as --model-draft and only works with MiniCPM5-2B.
+DSPARK_REPO ?= openbmb/MiniCPM5-2B-DSpark-GGUF
+DSPARK_FILE ?= MiniCPM5-2.6B-DSpark.gguf
+DSPARK_SHA256 ?= 57df08640f0534a1aac075d1c8bdacdb2b7e5815da6f4e5cfd39ecac3a3f0c26
+DSPARK_DIR := components/model-dspark-gguf
+
+.PHONY: all help init init-all init-dspark build install upload use-dspark use-default smoke-test install-deps init-submodules download-models download-extra-models download-dspark verify-model verify-extra-models verify-dspark
 
 all: help
 
@@ -40,7 +47,9 @@ help: ## Show this help message
 
 init: init-submodules install-deps download-models verify-model ## Initialize the build environment (default Q4_K_M model only)
 
-init-all: init-submodules install-deps download-models download-extra-models verify-model verify-extra-models ## Initialize with all quantization variants
+init-all: init-submodules install-deps download-models download-extra-models download-dspark verify-model verify-extra-models verify-dspark ## Initialize with all quantization variants and the DSpark draft
+
+init-dspark: init-submodules install-deps download-models download-dspark verify-model verify-dspark ## Initialize the build environment for the DSpark variant
 
 build: ## Build the snap
 	./dev/build.sh
@@ -50,6 +59,12 @@ install: ## Install the snap
 
 upload: ## Upload the snap
 	./dev/upload.sh
+
+use-dspark: ## Switch the installed snap to the DSpark variant (downloads the draft component)
+	sudo $(SNAP_NAME) use-model minicpm5-2b-dspark --assume-yes
+
+use-default: ## Switch the installed snap back to the default Q4_K_M variant
+	sudo $(SNAP_NAME) use-model minicpm5-2b --assume-yes
 
 smoke-test: ## Run smoke tests (override with SNAP_NAME=... ENGINE=...)
 	sudo ./dev/smoke-test.sh $(SNAP_NAME) $(ENGINE)
@@ -85,6 +100,11 @@ download-extra-models: ## Download Q5_K_M and Q6_K model variants
 	$(hf) download $(GGUF_EXTRA_REPO) $(Q6K_FILE) \
 		--local-dir $(Q6K_DIR)
 
+download-dspark: ## Download the DSpark draft model (optional minicpm5-2b-dspark variant)
+	@echo "Downloading MiniCPM5-2.6B-DSpark draft weights..."
+	$(hf) download $(DSPARK_REPO) $(DSPARK_FILE) \
+		--local-dir $(DSPARK_DIR)
+
 verify-model: ## Verify the Q4_K_M GGUF checksum against the pinned sha256
 	@echo "Verifying $(MODEL_DIR)/$(GGUF_FILE)..."
 	@if [ ! -f "$(MODEL_DIR)/$(GGUF_FILE)" ]; then \
@@ -112,3 +132,13 @@ verify-extra-models: ## Verify Q5_K_M and Q6_K GGUF checksums
 	@echo "$(Q6K_SHA256)  $(Q6K_DIR)/$(Q6K_FILE)" | sha256sum --check --status \
 		&& echo "OK: Q6_K checksum matches" \
 		|| { echo "ERROR: Q6_K checksum mismatch (expected $(Q6K_SHA256))" >&2; exit 1; }
+
+verify-dspark: ## Verify the DSpark draft GGUF checksum against the pinned sha256
+	@echo "Verifying $(DSPARK_DIR)/$(DSPARK_FILE)..."
+	@if [ ! -f "$(DSPARK_DIR)/$(DSPARK_FILE)" ]; then \
+		echo "ERROR: $(DSPARK_DIR)/$(DSPARK_FILE) not found. Run 'make download-dspark' first." >&2; \
+		exit 1; \
+	fi
+	@echo "$(DSPARK_SHA256)  $(DSPARK_DIR)/$(DSPARK_FILE)" | sha256sum --check --status \
+		&& echo "OK: DSpark checksum matches" \
+		|| { echo "ERROR: DSpark checksum mismatch (expected $(DSPARK_SHA256))" >&2; exit 1; }

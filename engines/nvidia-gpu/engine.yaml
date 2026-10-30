@@ -30,6 +30,7 @@ model:
     - minicpm5-2b
     - minicpm5-2b-q5km
     - minicpm5-2b-q6k
+    - minicpm5-2b-dspark
 
 configurations:
   sleep-idle-seconds: 600
